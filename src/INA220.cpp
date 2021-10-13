@@ -1,7 +1,6 @@
 #include "INA220.h"
-#include <Wire.h>
 
-INA220::INA220() {
+INA220::INA220(TwoWire& wire) : wire(wire) {
 }
 
 uint8_t INA220::begin(uint8_t maxBusAmps, uint32_t microOhmR, const ina_Adc_Mode busAdcMode, const ina_Adc_Mode shuntAdcMode, const ina_Mode deviceMode, uint8_t* deviceAddresses, uint8_t numDevices) {
@@ -45,7 +44,7 @@ uint8_t INA220::begin(uint8_t maxBusAmps, uint32_t microOhmR, const ina_Adc_Mode
   this->configRegister &= ~INA_CONFIG_MODE_MASK;                         // Zero out the device mode bits
   this->configRegister |= INA_CONFIG_MODE_MASK & deviceMode;             // Mask off unused bits then shift in the mode settings
 
-  Wire.begin();
+  wire.begin();
   uint8_t availableDevices = resetAll(); // Check if communication is working, then write calibration and configuration registers
   return availableDevices;
 }
@@ -57,7 +56,7 @@ void INA220::setI2CSpeed(const uint32_t i2cSpeed) {
                  is done.
       @param[in] i2cSpeed [optional] changes the I2C speed to the rate specified in Hertz */
 
-  Wire.setClock(i2cSpeed);
+  wire.setClock(i2cSpeed);
 }
 
 void INA220::setMode(const uint8_t mode, const uint8_t deviceNumber) {
@@ -184,8 +183,8 @@ uint8_t INA220::reset(const uint8_t deviceNumber) {
       @return    uint8_t number of devices that identified as INA220 (0 or 1) */
 
   uint8_t availableDevices = 0;
-  Wire.beginTransmission(getDeviceAddress(deviceNumber));
-  uint8_t good = Wire.endTransmission();
+  wire.beginTransmission(getDeviceAddress(deviceNumber));
+  uint8_t good = wire.endTransmission();
   if (good == 0) { // If no I2C error
     writeWord(INA_CONFIGURATION_REGISTER, INA_RESET_DEVICE, getDeviceAddress(deviceNumber));          // Forces INAs to reset
     uint16_t tempRegister = readWord(INA_CONFIGURATION_REGISTER, getDeviceAddress(deviceNumber));     // Read the newly reset register
@@ -266,14 +265,14 @@ int16_t INA220::readWord(const uint8_t addr, const uint8_t deviceAddress) {
       @param[in] deviceAddress Address on the I2C device to read from
       @return    integer value read from the I2C device */
 
-  Wire.beginTransmission(deviceAddress);       // Address the I2C device
-  Wire.write(addr);                            // Send register address to read
-  Wire.endTransmission();                      // Close transmission
+  wire.beginTransmission(deviceAddress);       // Address the I2C device
+  wire.write(addr);                            // Send register address to read
+  wire.endTransmission();                      // Close transmission
   delayMicroseconds(I2C_DELAY);                // Delay required for sync
-  Wire.requestFrom(deviceAddress, (uint8_t)2); // Request 2 consecutive bytes
-  int16_t returnData  = Wire.read();           // Read the msb
+  wire.requestFrom(deviceAddress, (uint8_t)2); // Request 2 consecutive bytes
+  int16_t returnData  = wire.read();           // Read the msb
   returnData  = returnData << 8;               // Shift the data over 8 bits
-  returnData |= Wire.read();                   // Read the lsb
+  returnData |= wire.read();                   // Read the lsb
   return returnData;
 }
 
@@ -285,10 +284,10 @@ void INA220::writeWord(const uint8_t addr, const uint16_t data, const uint8_t de
       @param[in] data 2 Bytes to write to the device
       @param[in] deviceAddress Address on the I2C device to write to */
 
-  Wire.beginTransmission(deviceAddress); // Address the I2C device
-  Wire.write(addr);                      // Send register address to write
-  Wire.write((uint8_t)(data >> 8));      // Write the first (MSB) byte
-  Wire.write((uint8_t)data);             // And then the second
-  Wire.endTransmission();                // Close transmission and actually send data
+  wire.beginTransmission(deviceAddress); // Address the I2C device
+  wire.write(addr);                      // Send register address to write
+  wire.write((uint8_t)(data >> 8));      // Write the first (MSB) byte
+  wire.write((uint8_t)data);             // And then the second
+  wire.endTransmission();                // Close transmission and actually send data
   delayMicroseconds(I2C_DELAY);          // Delay required for sync
 }

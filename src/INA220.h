@@ -18,7 +18,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************************************************/
  
-#include "Arduino.h"
+#include <Arduino.h>
+#include <Wire.h>
 
 #ifndef INA220__Class_h
   /*! Guard code definition to prevent multiple includes */
@@ -92,7 +93,7 @@
 
   class INA220 {
     public:
-      INA220                                ();
+      INA220                                (TwoWire& wire);
       uint8_t     begin                     (uint8_t maxBusAmps, uint32_t microOhmR, const ina_Adc_Mode busAdcMode, const ina_Adc_Mode shuntAdcMode, const ina_Mode deviceMode, uint8_t* deviceAddresses, uint8_t numDevices);
       void        setI2CSpeed               (const uint32_t i2cSpeed = INA_I2C_STANDARD_MODE);
       void        setMode                   (const uint8_t  mode,     const uint8_t deviceNumber);
@@ -116,6 +117,7 @@
       void        initDevice                (const uint8_t  deviceNumber);
       int16_t     readWord                  (const uint8_t  addr, const uint8_t  deviceAddress);
       void        writeWord                 (const uint8_t  addr, const uint16_t data, const uint8_t deviceAddress);
+      TwoWire&    wire;
       uint8_t*    deviceAddresses;
       uint8_t     numDevices;
       uint32_t    current_LSB;
